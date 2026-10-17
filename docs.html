@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="src/style.css">
+  <title>Component Docs — p5 Autonomous Node Economy</title>
+</head>
+
+<body style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 960px; padding: 1.5rem; color: #111; line-height: 1.55; margin: 0 auto;">
+
+  <header style="margin-bottom: 2rem;">
+    <h1 style="font-size: 1.6rem; margin: 0 0 0.5rem 0;">Component Reference</h1>
+    <p style="margin: 0; color: #444;">
+      Motivations, Restrictions, and Visualizations for the <strong>p5 Autonomous Node Economy</strong>
+      simulation. Use <a href="index.html">← back to index.html</a>.
+    </p>
+  </header>
+
+  <nav style="margin-bottom: 2rem; font-size: 0.95rem; color: #555;">
+    <p>Jump to:</p>
+    <ul style="list-style: none; padding: 0; margin: 0; display: flex; gap: 1rem; flex-wrap: wrap;">
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#motivations">Motivations</a></li>
+      <li><a href="#restrictions">Restrictions</a></li>
+      <li><a href="#visualizations">Visualizations</a></li>
+      <li><a href="#math-params">Math-based parameters</a></li>
+    </ul>
+  </nav>
+
+  <section id="how-it-works">
+    <h2>How it works</h2>
+    <p>
+      Each <code>Node</code> holds a position <code>(x, y)</code>, velocity <code>(dx, dy)</code>, health, a list of
+      <strong>motivations</strong>, and a list of <strong>visualizations</strong>. Every frame, <code>NodeGroup.render()</code>
+      runs this pipeline per node:
+    </p>
+    <ol>
+      <li><strong>Motivate</strong> — each motivation computes its own <code>dx</code>/<code>dy</code> influence;
+          the node sums them into its total velocity.</li>
+      <li><strong>Restrict</strong> — each registered restriction mutates position/direction/health after movement.</li>
+      <li><strong>Move</strong> — <code>x += dx</code>, <code>y += dy</code>.</li>
+      <li><strong>Render</strong> — each visualization draws the node.</li>
+    </ol>
+    <p>
+      The simulation loop stops when all nodes come to rest (speed ≤ 0.01). Press <code>r</code> to restart.
+      Node count (<code>INITIAL_NODE_COUNT</code>) must stay even because <code>MagnetPairMotivation</code> pairs even↔odd
+      indices.
+    </p>
+  </section>
+
+  <section id="motivations">
+    <h2>Motivations</h2>
+    <p>
+      Motivations extend the abstract <code>Motivation</code> base class. Each implements <code>motivate(n)</code>,
+      which sets its own <code>dx</code>/<code>dy</code> influence. The node aggregates all motivations' <code>dx</code>
+      and <code>dy</code> into its total velocity each frame. Optional <code>initialize(n)</code> runs once at setup.
+    </p>
+
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Class</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Constructor parameters</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MagnetMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>scaleX = 600</code>, <code>scaleY = 700</code>, <code>dampeningX = 0.964</code>, <code>dampeningY = 0.964</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Spring-like pull toward a configured magnet node.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MagnetPairMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>scaleX = 100</code>, <code>scaleY = 100</code>, <code>dampeningX = 0.64</code>, <code>dampeningY = 0.64</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Same math as MagnetMotivation; pairs node <i>i</i> with <i>i+1</i> (even) or
+            <i>i-1</i> (odd) as its magnet. Requires an even node count.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MagnetRandomMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>scaleX = 50</code>, <code>scaleY = 50</code>, <code>dampeningX = 0.964</code>, <code>dampeningY = 0.964</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Same math as MagnetMotivation; links to a random other node (dynamic linking).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MagnetChainMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>scaleX = 5</code>, <code>scaleY = 5</code>, <code>dampeningX = 0.964</code>, <code>dampeningY = 0.964</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Same math as MagnetMotivation; links node <i>i</i> → node <i>(i+1) mod N</i>
+            (chain structure).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SocialPersonalMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>personalRadius</code>, <code>strength</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Avoids neighbors within <code>personalRadius</code> (separation/clustering).
+            Sums normalized away-vectors and scales by strength.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SocialVisibleMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>visibleRadius</code>, <code>strength</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Attracts toward neighbors within <code>visibleRadius</code> (cohesion).
+            Sums normalized toward-vectors and scales by strength.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">FollowFarthestMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">(none)</td>
+          <td style="padding: 0.4rem 0.6rem;">Steers toward the farthest node in the group (unit direction vector).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">CircularMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>radius</code>, <code>angle</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Tangential/circular motion. Angle advances by 0.1 rad/frame.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">RandomXMotivation / RandomYMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>amount</code></td>
+          <td style="padding: 0.4rem 0.6rem;">Random impulse per frame on one axis: <code>(random×2 − 1) × amount</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">TowardsXMotivation / TowardsYMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>target</code>, <code>strength</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Pulls toward a fixed axis position: <code>dx += (target − pos) × strength</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SineXMotivation / SineYMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>amplitude</code>, <code>phase</code>, <code>damping</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Oscillatory force: <code>sin(phase) × amplitude × damping</code>;
+            phase advances by 0.1 rad/frame.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">AgingHealthMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>dHealth</code></td>
+          <td style="padding: 0.4rem 0.6rem;">Subtracts <code>dHealth</code> from node health each frame (nodes eventually
+            die and are removed). Pass a negative value to age.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <section id="restrictions">
+    <h2>Restrictions</h2>
+    <p>
+      Restrictions extend the abstract <code>Restriction</code> base class. Each implements <code>restrict(n)</code>,
+      which mutates a node's position/direction/health after movement. Register with
+      <code>nodeGroup.addNodeRestriction(...) </code> so it applies to every node each frame.
+    </p>
+
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Class</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Constructor parameters</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">BoundingBoxRandomJumpRestriction</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>x1, y1, x2, y2</code></td>
+          <td style="padding: 0.4rem 0.6rem;">If out of bounds, teleports to a random in-bounds point:
+            <code>x = x1 + random × (x2 − x1)</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">BoundingBoxKillRestriction</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>x1, y1, x2, y2</code></td>
+          <td style="padding: 0.4rem 0.6rem;">If out of bounds, sets health to −1 (killed; removed next frame).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">BoundingBoxWrapRestriction</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>x1, y1, x2, y2</code></td>
+          <td style="padding: 0.4rem 0.6rem;">Toroidal wrap — exit one edge, re-enter opposite edge.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MinSpeedRestriction</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>minSpeed</code></td>
+          <td style="padding: 0.4rem 0.6rem;">Enforces a speed floor:
+            <code>dx = minSpeed × cos(dir)</code>, <code>dy = minSpeed × sin(dir)</code> when 0 &lt; speed &lt; minSpeed.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MaxSpeedRestriction</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>maxSpeed</code></td>
+          <td style="padding: 0.4rem 0.6rem;">Clamps speed to a max:
+            <code>dx = maxSpeed × cos(dir)</code>, <code>dy = maxSpeed × sin(dir)</code> when speed &gt; maxSpeed.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <section id="visualizations">
+    <h2>Visualizations</h2>
+    <p>
+      Visualizations extend the abstract <code>Visualization</code> base class. Each implements <code>render(n)</code>,
+      which draws the node using the p5 instance and a <code>ColorPallet</code>. Palette index 0 is always the
+      background color.
+    </p>
+
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Class</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Constructor parameters</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SpeedCircleDrawVisualization</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>p, colorPallet, scalingFactor, angle, dAngle, strokeColorIndex, strokeColorAlpha, strokeColorWidth, fillColorIndex, fillColorAlpha, fillColorWidth</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Continuous curved trails scaled by speed. Radius = scalingFactor × speed;
+            draws a line from last point to new point each frame (angle advances by dAngle).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SpeedCircleVisualization</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>p, colorPallet, scalingFactor, strokeColorIndex, strokeColorAlpha, fillColorIndex = 0, fillColorAlpha = 0</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Circle radius = scalingFactor × speed; optional fill when fillAlpha &gt; 0.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SpeedSquareVisualization</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>p, colorPallet, scalingFactor, strokeColorIndex, strokeColorAlpha, fillColorIndex = 0, fillColorAlpha = 0</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Square sized by speed (radius = scalingFactor × speed), rotated by
+            <code>getDirection()</code>; visualizes both speed (size) and direction (orientation).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">NeighborVisualization</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>p, colorPallet, neighborRadius, maxAlpha, toggleEnabled</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Lines to neighbors within neighborRadius. Alpha fades linearly with
+            distance: <code>maxAlpha − maxAlpha × dist / neighborRadius</code>; palette index shifts with distance.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">PixelVisualization</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;"><code>p, colorPallet, index, alpha</code></td>
+          <td style="padding: 0.4rem 0.6rem;">Single pixel at node position with fixed palette index and alpha.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">NodeMotivationVisualization</td>
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">
+            <code>p, colorPallet, bodyRadius, dirScale, bodyColorIndex, bodyColorAlpha, lineColorIndex, lineColorAlpha</code>
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Filled body circle + direction-vector line:
+            <code>end = pos + dirScale × speed × (cos(dir), sin(dir))</code>.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <section id="math-params">
+    <h2>Math-based parameter details</h2>
+    <p>
+      Core node helpers (from <code>src/engine/Node.ts</code>):
+    </p>
+    <ul>
+      <li><code>getSpeed() = sqrt(dx² + dy²)</code> — velocity magnitude.</li>
+      <li><code>getDirection() = atan2(dy, dx)</code> — travel angle in radians.</li>
+      <li><code>getDistance(other) = sqrt((x−other.x)² + (y−other.y)²)</code> — Euclidean distance.</li>
+    </ul>
+
+    <h3>Motivation math</h3>
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Motivation</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Per-frame formula</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">Magnet*</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>dx += (magnet.x − n.x) / scaleX</code>; <code>dx *= dampeningX</code>;<br>
+            <code>dy += (magnet.y − n.y) / scaleY</code>; <code>dy *= dampeningY</code>.<br>
+            <em>scale</em> controls spring stiffness (larger = weaker pull); <em>dampening</em> ∈ (0,1) damps velocity
+            each frame.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SocialPersonalMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            For each neighbor with 0 &lt; d &lt; personalRadius: sum <code>((n.x − other.x)/d, (n.y − other.y)/d)</code>;<br>
+            then <code>dx = (sum/count) × strength</code>, <code>dy = (sum/count) × strength</code>. (Repulsion / separation.)</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SocialVisibleMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            Same as above but vector points <em>toward</i> the neighbor: <code>((other.x − n.x)/d, ...)</code>;
+            applies when 0 &lt; d &lt; visibleRadius. (Attraction / cohesion.)</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">FollowFarthestMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>dx = (farthest.x − n.x) / maxD</code>, <code>dy = (farthest.y − n.y) / maxD</code> — unit vector
+            toward the farthest node.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">CircularMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>dx = −sin(angle) × radius</code>, <code>dy = cos(angle) × radius</code>; <code>angle += 0.1</code> rad/frame.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">RandomX/YMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>dx = (random × 2 − 1) × amount</code> (or dy) — uniform impulse in [−amount, +amount].</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">TowardsX/YMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>dx += (target − n.x) × strength</code> (or dy) — linear pull proportional to distance.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SineX/YMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>dx = sin(phase) × amplitude × damping</code> (or dy); <code>phase += 0.1</code> rad/frame.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">AgingHealthMotivation</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>health += dHealth</code> each frame. Pass negative <code>dHealth</code> to make nodes die.</td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <h3>Restriction math</h3>
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Restriction</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Per-frame formula</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">BoundingBoxRandomJumpRestriction</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            If out of bounds: <code>x = x1 + random × (x2 − x1)</code>, <code>y = y1 + random × (y2 − y1)</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">BoundingBoxKillRestriction</td>
+          <td style="padding: 0.4rem 0.6rem;">If out of bounds: <code>health = −1</code> (removed next frame).</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">BoundingBoxWrapRestriction</td>
+          <td style="padding: 0.4rem 0.6rem;">Toroidal: exit left → re-enter right (and vice versa); exit top → re-enter bottom.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MinSpeedRestriction</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            If 0 &lt; speed &lt; minSpeed: <code>dx = minSpeed × cos(dir)</code>, <code>dy = minSpeed × sin(dir)</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">MaxSpeedRestriction</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            If speed &gt; maxSpeed: <code>dx = maxSpeed × cos(dir)</code>, <code>dy = maxSpeed × sin(dir)</code>.</td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <h3>Visualization math</h3>
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Visualization</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Per-frame formula</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SpeedCircle*</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>radius = scalingFactor × speed</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SpeedCircleDrawVisualization</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>radius = scalingFactor × speed</code>; <code>angle = (angle + dAngle) mod 2π</code>;<br>
+            point = <code>(x + radius×cos(angle), y + radius×sin(angle))</code>; draws line from previous point.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">SpeedSquareVisualization</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            <code>radius = scalingFactor × speed</code>; translate to <code>(x + radius/2, y + radius/2)</code>,
+            rotate by <code>dir = atan2(dy, dx)</code>, draw <code>radius × radius</code> square.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">NeighborVisualization</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            Line drawn if <code>dist &lt; neighborRadius</code>;<br>
+            <code>paletteIndex = floor(colorCount × dist / neighborRadius)</code>;<br>
+            <code>alpha = maxAlpha − maxAlpha × dist / neighborRadius</code>.</td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace;">NodeMotivationVisualization</td>
+          <td style="padding: 0.4rem 0.6rem;">
+            Body circle radius = bodyRadius;<br>
+            line end = <code>(x + dirScale × speed × cos(dir), y + dirScale × speed × sin(dir))</code>.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </section>
+
+  <footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd; font-size: 0.85rem; color: #666;">
+    Source: <code>src/engine/custommotivations/</code>, <code>src/engine/customrestrictions/</code>,
+    <code>src/engine/customvisualizations/</code>. Base classes: <code>src/engine/Motivation.ts</code>,
+    <code>src/engine/Restriction.ts</code>, <code>src/engine/Visualization.ts</code>.
+  </footer>
+
+</body>
+
+</html>

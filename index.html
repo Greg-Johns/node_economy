@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="src/style.css">
+  <title>p5 Autonomous Node Economy</title>
+  <script type="module" src="/src/sketch.ts"></script>
+</head>
+
+<body>
+
+  <main>
+    <!-- canvas goes here -->
+  </main>
+  <div id="writeup"
+    style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 760px; padding: 1.5rem; color: #111; line-height: 1.55;">
+
+    <h1 style="font-size: 1.5rem; margin-top: 0;">p5 Autonomous Node Economy</h1>
+    <p style="margin-bottom: 1rem;">
+      A single-page p5.js simulation (TypeScript + Vite). A population of <strong>nodes</strong> moves across the
+      canvas,
+      each driven by one or more <strong>motivations</strong> (movement logic) and drawn by one or more
+      <strong>visualizations</strong> (rendering logic). Optional <strong>restrictions</strong> are applied per frame to
+      every node by <code>NodeGroup.render()</code>. The simulation stops when all nodes come to rest (speed ≤ 0.01).
+    </p>
+    <p style="margin-top: 0.5rem;">
+      <a href="docs.html" style="color: #2563eb; text-decoration: none; font-weight: 600;">→ Component Reference (motivations, restrictions, visualizations)</a>
+    </p>
+
+    <h2 style="font-size: 1.2rem;">Key Mappings</h2>
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1.5rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Key</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.9rem;">r
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Restart the animation (re-runs <code>setup()</code>).</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.9rem;">
+            Space</td>
+          <td style="padding: 0.4rem 0.6rem;">Pause / resume the animation loop.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.9rem;">s
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Save the current canvas as a PNG
+            (<code>nodes_&lt;timestamp&gt;_&lt;frame&gt;.png</code>).</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.9rem;">c
+          </td>
+          <td style="padding: 0.4rem 0.6rem;">Clear the canvas (redraw background) while keeping nodes in their current
+            state.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 style="font-size: 1.2rem;">Project Structure</h2>
+    <ul style="margin-bottom: 1rem;">
+      <li><strong><code>src/sketch.ts</code></strong> — Entry point. Bootstraps <code>AutonomousNodeEconomy</code> +
+        <code>NodeGroup</code>,
+        creates 1000 nodes (<code>INITIAL_NODE_COUNT</code>, must stay even for <code>MagnetPairMotivation</code>
+        pairing),
+        drives the <code>p.draw()</code> loop, and handles key input.
+      </li>
+      <li><strong><code>src/engine/AutonomousNodeEconomy.ts</code></strong> — Wraps a <code>NodeGroup</code> and a
+        <code>ColorPallet</code>;
+        sketch-level orchestration.
+      </li>
+      <li><strong><code>src/engine/NodeGroup.ts</code></strong> — Collection of nodes. <code>render()</code> runs the
+        per-frame
+        motivate → restrict → move → render pipeline. <code>removeUnhealthyNodes()</code> deletes nodes with negative
+        health.</li>
+      <li><strong><code>src/engine/Node.ts</code></strong> — Single node: position (<code>x</code>, <code>y</code>),
+        velocity (<code>dx</code>, <code>dy</code>),
+        health, motivations, visualizations.</li>
+      <li><strong><code>src/engine/Motivation.ts</code></strong>, <strong><code>Visualization.ts</code></strong>,
+        <strong><code>Restriction.ts</code></strong> —
+        Abstract base classes you extend to build new behaviors.
+      </li>
+      <li><strong><code>src/engine/ColorPallet.ts</code></strong> +
+        <strong><code>customcolorpallets/ManualColorPallet.ts</code></strong> —
+        Palette of colors; index 0 is always the background color.
+      </li>
+    </ul>
+
+    <h2 style="font-size: 1.2rem;">Interface Docs</h2>
+
+    <h3 style="font-size: 1rem;">Node</h3>
+    <ul>
+      <li><code>new Node(x, y, health = 100)</code> — create a node at <code>x</code>, <code>y</code> with starting
+        health.</li>
+      <li><code>x</code>, <code>y</code> — current position.</li>
+      <li><code>dx</code>, <code>dy</code> — current velocity vector (set by motivations each frame).</li>
+      <li><code>health</code> — positive = alive; negative = marked for removal.</li>
+      <li><code>getSpeed()</code>, <code>getDirection()</code>, <code>getDistance(other)</code> — motion/distance
+        helpers.</li>
+      <li><code>addMotivation(motivation)</code>, <code>addVisualization(visualization)</code>.</li>
+      <li><code>killHealth()</code>, <code>changeHealth(delta)</code>, <code>getHealth()</code>.</li>
+    </ul>
+
+    <h3 style="font-size: 1rem;">NodeGroup</h3>
+    <ul>
+      <li><code>addNode(node)</code>, <code>getNodeCount()</code>, <code>getNode(i)</code>,
+        <code>getNodeIndex(node)</code>.
+      </li>
+      <li><code>getNextNode(node)</code>, <code>getPreviousNode(node)</code> — circular neighbors.</li>
+      <li><code>addNodeRestriction(restriction)</code> — applies to every node each frame.</li>
+      <li><code>initialize()</code> — calls initialize on every node's motivations and visualizations.</li>
+      <li><code>render()</code> — per node: motivate → restrictions → move → render.</li>
+      <li><code>removeUnhealthyNodes()</code> — deletes nodes with health &lt; 0.</li>
+      <li><code>isGroupMoving()</code> — true if any node speed &gt; 0.01.</li>
+    </ul>
+
+    <h3 style="font-size: 1rem;">Base Classes (extend these)</h3>
+    <ul>
+      <li><strong>Motivation</strong>: <code>motivate(n)</code> sets <code>dx</code>/<code>dy</code> influence; optional
+        <code>initialize(n)</code>.
+      </li>
+      <li><strong>Visualization</strong>: <code>render(n)</code> draws the node; optional <code>initialize(n)</code>.
+      </li>
+      <li><strong>Restriction</strong>: <code>restrict(n)</code> mutates position/direction/health after movement.</li>
+      <li><strong>ColorPallet</strong>: <code>getColor(index, alpha)</code> → [r,g,b,a]; index 0 = background.</li>
+    </ul>
+
+    <h3 style="font-size: 1rem;">Built-in Motivations (<code>src/engine/custommotivations/</code>)</h3>
+    <table style="border-collapse: collapse; width: 100%; margin-bottom: 1rem;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Class</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Constructor</th>
+          <th style="padding: 0.4rem 0.6rem; font-weight: 600;">Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">MagnetMotivation
+          </td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">scaleX, scaleY, dampeningX, dampeningY</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Spring-like pull toward a magnet node.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            MagnetPairMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">same as MagnetMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Pairs even↔odd nodes as magnets.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            MagnetRandomMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">same as MagnetMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Links to a random other node.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            MagnetChainMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">same as MagnetMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Links node → next node (chain).</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            SocialPersonalMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">personalRadius, strength</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Avoids neighbors within personal radius
+            (clustering/separation).</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            SocialVisibleMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">visibleRadius, strength</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Attracts toward neighbors within visible radius.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            FollowFarthestMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">(none)</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Steers toward the farthest node in the group.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            CircularMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">radius, angle</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Tangential/circular motion; angle advances 0.1/frame.
+          </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            RandomXMotivation / RandomYMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">amount</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Random impulse per frame on one axis.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            TowardsXMotivation / TowardsYMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">target, strength</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Pulls toward a fixed axis position.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">SineXMotivation
+            / SineYMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">amplitude, phase, damping</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Oscillatory force; phase advances 0.1/frame.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 0.4rem 0.6rem; font-family: ui-monospace, monospace; font-size: 0.85rem;">
+            AgingHealthMotivation</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">dHealth</td>
+          <td style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Subtracts health each frame (nodes eventually die).
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size: 1rem;">Built-in Visualizations (<code>src/engine/customvisualizations/</code>)</h3>
+    <ul>
+      <li><strong>SpeedCircleDrawVisualization</strong> — curved trails scaled by speed (continuous drawing).</li>
+      <li><strong>SpeedCircleVisualization</strong> — circle radius = scalingFactor × speed; optional fill.</li>
+      <li><strong>SpeedSquareVisualization</strong> — square sized by speed, rotated by direction.</li>
+      <li><strong>NeighborVisualization</strong> — lines to neighbors within a radius, alpha fades with distance.</li>
+      <li><strong>PixelVisualization</strong> — single pixel per node.</li>
+      <li><strong>NodeMotivationVisualization</strong> — filled body circle + direction-vector line.</li>
+    </ul>
+
+    <h3 style="font-size: 1rem;">Built-in Restrictions (<code>src/engine/customrestrictions/</code>)</h3>
+    <ul>
+      <li><strong>BoundingBoxRandomJumpRestriction</strong> — teleport out-of-bounds nodes to a random in-bounds point.
+      </li>
+      <li><strong>BoundingBoxKillRestriction</strong> — kill (negative health) out-of-bounds nodes.</li>
+      <li><strong>BoundingBoxWrapRestriction</strong> — toroidal wrap (exit one edge, re-enter opposite).</li>
+      <li><strong>MinSpeedRestriction</strong> — enforce a minimum speed floor.</li>
+      <li><strong>MaxSpeedRestriction</strong> — clamp speed to a maximum.</li>
+    </ul>
+
+    <h3 style="font-size: 1rem;">Color Pallet (<code>customcolorpallets/ManualColorPallet.ts</code>)</h3>
+    <ul>
+      <li><code>addColor(r, g, b)</code> — add a color; index 0 MUST be the background color.</li>
+      <li><code>getColor(index, alpha)</code> / <code>getColor(index1, index2, offset, alpha)</code> /
+        <code>getColor(nx, ny, alpha)</code>.
+      </li>
+      <li><code>getColorCount()</code> — number of colors excluding background.</li>
+    </ul>
+
+    <h2 style="font-size: 1.2rem;">Experimenting — Things to Try</h2>
+    <ul>
+      <li><strong>Change the node count:</strong> edit <code>INITIAL_NODE_COUNT</code> in <code>src/sketch.ts</code>
+        (must stay even for <code>MagnetPairMotivation</code>).</li>
+      <li><strong>Add/remove motivations:</strong> in <code>setup()</code>, call <code>newNode.addMotivation(new
+          ...Motivation(...))</code> or swap out <code>MagnetPairMotivation</code>.</li>
+      <li><strong>Add restrictions:</strong> call <code>nodeGroup.addNodeRestriction(new BoundingBoxWrapRestriction(0,
+          0, p.width, p.height))</code> to keep nodes inside the canvas.</li>
+      <li><strong>Swap visualizations:</strong> replace <code>SpeedCircleDrawVisualization</code> with
+        <code>SpeedCircleVisualization</code>, <code>PixelVisualization</code>, <code>NeighborVisualization</code>, etc.
+      </li>
+      <li><strong>Tweak the palette:</strong> add more colors via <code>colorPallet.addColor(r, g, b)</code> and
+        reference them by index in visualizations.</li>
+      <li><strong>Enable aging:</strong> add <code>newNode.addMotivation(new AgingHealthMotivation(-1))</code> so nodes
+        die off and get removed.</li>
+      <li><strong>Restart:</strong> press <code>r</code> to reset; press <code>c</code> to clear the canvas while
+        keeping node state.</li>
+    </ul>
+
+    <h2 style="font-size: 1.2rem;">Commands</h2>
+    <ul style="margin-bottom: 0;">
+      <li><code>pnpm dev</code> — start the Vite dev server.</li>
+      <li><code>pnpm build</code> — typecheck (<code>tsc</code>) then build to <code>dist/</code>.</li>
+      <li><code>pnpm preview</code> — serve the <code>dist/</code> build locally.</li>
+    </ul>
+
+  </div>
+
+</body>
+
+</html>
