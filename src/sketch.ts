@@ -4,16 +4,60 @@ import { AutonomousNodeEconomy } from './engine/AutonomousNodeEconomy';
 import { NodeGroup } from './engine/NodeGroup';
 import { Node } from './engine/Node';
 import { ManualColorPallet } from './engine/customcolorpallets/ManualColorPallet';
+
+// motivations
+import { MagnetMotivation } from './engine/custommotivations/MagnetMotivation';
+import { MagnetRandomMotivation } from './engine/custommotivations/MagnetRandomMotivation';
 import { MagnetPairMotivation } from './engine/custommotivations/MagnetPairMotivation';
-import { SocialPersonalMotivation } from './engine/custommotivations/SocialPersonalMotivation';
+import { MagnetChainMotivation } from './engine/custommotivations/MagnetChainMotivation';
+
+import { SineXMotivation } from './engine/custommotivations/SineXMotivation';
+import { SineYMotivation } from './engine/custommotivations/SineYMotivation';
+
+import { RandomXMotivation } from './engine/custommotivations/RandomXMotivation';
+import { RandomYMotivation } from './engine/custommotivations/RandomYMotivation';
+
+import { TowardsXMotivation } from './engine/custommotivations/TowardsXMotivation';
+import { TowardsYMotivation } from './engine/custommotivations/TowardsYMotivation';
+
+import { FollowFarthestMotivation } from './engine/custommotivations/FollowFarthestMotivation';
 import { CircularMotivation } from './engine/custommotivations/CircularMotivation';
+import { SocialPersonalMotivation } from './engine/custommotivations/SocialPersonalMotivation';
+import { SocialVisibleMotivation } from './engine/custommotivations/SocialVisibleMotivation';
+
+import { AgingHealthMotivation } from './engine/customhealthmotivations/AgingHealthMotivation';
+
+// visualizations
 import { SpeedCircleDrawVisualization } from './engine/customvisualizations/SpeedCircleDrawVisualization';
+import { SpeedCircleVisualization } from './engine/customvisualizations/SpeedCircleVisualization';
+import { SpeedSquareVisualization } from './engine/customvisualizations/SpeedSquareVisualization';
 import { PixelVisualization } from './engine/customvisualizations/PixelVisualization';
+import { NodeMotivationVisualization } from './engine/customvisualizations/NodeMotivationVisualization';
 import { NeighborVisualization } from './engine/customvisualizations/NeighborVisualization';
+
+// restrictions
+import { MaxSpeedRestriction } from './engine/customrestrictions/MaxSpeedRestriction';
+import { MinSpeedRestriction } from './engine/customrestrictions/MinSpeedRestriction';
+import { BoundingBoxKillRestriction } from './engine/customrestrictions/BoundingBoxKillRestriction';
+import { BoundingBoxWrapRestriction } from './engine/customrestrictions/BoundingBoxWrapRestriction';
+import { BoundingBoxRandomJumpRestriction } from './engine/customrestrictions/BoundingBoxRandomJumpRestriction';
+
+// base variables
 const WIDTH = 640;
 const HEIGHT = 640;
-const INITIAL_NODE_COUNT = 700; // must be even because of MagnetPairMotivation pairing
 const MULTIFRAME_RENDER = false;
+const INITIAL_NODE_COUNT = 100; // must be even because of MagnetPairMotivation pairing
+
+const downloadFile = (blob: Blob, fileName: string): void => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 const sketch = (p: p5) => {
   let autonomousNodeEconomy: AutonomousNodeEconomy | null = null;
@@ -31,7 +75,7 @@ const sketch = (p: p5) => {
     colorPallet.addColor(80, 80, 100);
     colorPallet.addColor(200, 80, 10);
     colorPallet.addColor(20, 200, 90);
-    colorPallet.addColor(20, 20, 200);
+    colorPallet.addColor(20, 40, 120);
 
     // --- create the node group and economy
     const nodeGroup = new NodeGroup();
@@ -39,47 +83,85 @@ const sketch = (p: p5) => {
 
     // --- populate the node group
     for (let i = 0; i < INITIAL_NODE_COUNT; i++) {
-      const newNode = new Node(p.random(0, p.width), p.random(0, p.height), 100);
+      // Populate nodes on the canvas
+      // const newNode = new Node(p.random(0, p.width), p.random(0, p.height), 100);
+      const newNode = new Node(p.width / 2, p.height / 2, 100);
 
-      // motivations for the node's movement
-      newNode.addMotivation(new MagnetPairMotivation(400, 700, 0.94, 0.9));
-      // scaleX = 600,
-      // scaleY = 700,
-      // dampeningX = 0.964,
-      // dampeningY = 0.964
+      // MOTIVATIONS ///////////////
+      // newNode.addMotivation(new MagnetMotivation(400, 700, .9, .9))
+      // magnet: Node | null, scaleX, scaleY, dampeningX, dampeningY;
 
-      newNode.addMotivation(new SocialPersonalMotivation(90, .7));
+      // newNode.addMotivation(new MagnetPairMotivation(40, 40, 0.08, 0.09));
+      // scaleX = 600, scaleY = 700, dampeningX = 0.964, dampeningY = 0.964
 
-      // newNode.addMotivation(new CircularMotivation(2, 109));
-      // public radius: number;
-      // public angle: number;
+      // newNode.addMotivation(new MagnetChainMotivation(400, 400, .9, .9));
+      // scaleX = 5, scaleY = 5, dampeningX = 0.964, dampeningY = 0.964
 
-      // visualizations
-      newNode.addVisualization(new PixelVisualization(p, colorPallet, 2, 70));
-      //   public index: number;
-      //   public alpha: number;
+      newNode.addMotivation(new MagnetRandomMotivation(80, 80, .04, .04));
+      // scaleX = 50, scaleY = 50, dampeningX = 0.964, dampeningY = 0.964
 
-      newNode.addVisualization(new NeighborVisualization(p, colorPallet, 10, 60, false));
-      //   public neighborRadius: number;
-      //   public maxAlpha: number;
-      //   public toggleEnabled: boolean;
+      newNode.addMotivation(new SocialPersonalMotivation(10, .7));
+      // newNode.addMotivation(new SocialVisibleMotivation(20, .2));
+      // personalRadius: number, strength: number
 
-      // newNode.addVisualization(
-      //   new SpeedCircleDrawVisualization(
-      //     p,
-      //     colorPallet,
-      //     1, // scalingFactor
-      //     0,  // angle
-      //     2,
-      //     // (Math.pow(-1, Math.floor(p.random(0, 10))) / 1.2),
-      //     0,  // strokeColorIndex
-      //     100,  // strokeColorAlpha
-      //     0, // strokeColorWidth
-      //     2,  // fillColorIndex
-      //     20,  // fillColorAlpha
-      //     1   // fillColorWidth
-      //   )
-      // );
+      // newNode.addMotivation(new SineXMotivation(10, 100, 1))
+      // newNode.addMotivation(new SineYMotivation(10, 1, .7))
+      // amplitude, phase, dampening
+
+      newNode.addMotivation(new RandomXMotivation(1));
+      newNode.addMotivation(new RandomYMotivation(1));
+      // amount
+
+      // newNode.addMotivation(new TowardsXMotivation(400, .4));
+      // newNode.addMotivation(new TowardsYMotivation(0, .04));
+      // targetX, strength
+
+      // newNode.addMotivation(new FollowFarthestMotivation())
+      // visibleRadius: number, strength: number
+
+      // newNode.addMotivation(new CircularMotivation(10, 9));
+      // radius: number, angle: number
+
+      // newNode.addMotivation(new AgingHealthMotivation(-1));
+
+      // RESTRICTIONS ///////////////
+      // nodeGroup.addNodeRestriction(new BoundingBoxRandomJumpRestriction(0, 0, p.width, p.height))
+      // nodeGroup.addNodeRestriction(new BoundingBoxWrapRestriction(0, 0, p.width, p.height))
+      nodeGroup.addNodeRestriction(new BoundingBoxKillRestriction(0, 0, p.width, p.height))
+      // nodeGroup.addNodeRestriction(new MaxSpeedRestriction())
+      // nodeGroup.addNodeRestriction(new MinSpeedRestriction())
+
+      // VISUALIZATIONS ////////////
+      // newNode.addVisualization(new PixelVisualization(p, colorPallet, 5, 100));
+      // index: number,  public alpha: number
+
+      newNode.addVisualization(new NeighborVisualization(p, colorPallet, 40, 60, false));
+      // neighborRadius, maxAlpha: number, toggleEnabled: boolean
+
+      // newNode.addVisualization(new NodeMotivationVisualization(p, colorPallet, 1, 100, 5, 20, 5, 20));
+      // p: p5, colorPallet, bodyRadius, dirScale, bodyColorIndex, bodyColorAlpha,lineColorIndex, lineColorAlpha
+
+      newNode.addVisualization(
+        new SpeedCircleDrawVisualization(
+          p,
+          colorPallet,
+          2, // scalingFactor
+          0,  // angle
+          // 2,
+          (Math.pow(-1, Math.floor(p.random(0, 10))) / 1.2),
+          1,  // strokeColorIndex
+          1,  // strokeColorAlpha
+          0, // strokeColorWidth
+          2,  // fillColorIndex
+          20,  // fillColorAlpha
+          1   // fillColorWidth
+        )
+      );
+
+      // newNode.addVisualization(new SpeedSquareVisualization(p, colorPallet, 10, 1, 100, 4, 100));
+      // newNode.addVisualization(new SpeedCircleVisualization(p, colorPallet, 10, 1, 100, 4, 100));
+      // p, colorPallet, scalingFactor, strokeColorIndex, strokeColorAlpha, fillColorIndex, fillColorAlpha
+
 
       nodeGroup.addNode(newNode);
     }
@@ -135,9 +217,21 @@ const sketch = (p: p5) => {
       case 's': // save current canvas
         if (autonomousNodeEconomy) {
           console.log('Saving image ...');
-          const fileName = `${saveFileName}_${p.frameCount}.png`;
-          p.saveCanvas(fileName, 'png');
-          console.log(`... done: '${fileName}'`);
+          const fileName = `${saveFileName}_${p.frameCount}`;
+          p.saveCanvas(`${fileName}.png`, 'png');
+
+          const info = {
+            nodeCount: autonomousNodeEconomy.nodeGroup.getNodeCount(),
+            canvas: { width: WIDTH, height: HEIGHT },
+            motivations: ['MagnetRandomMotivation(8, 8, 0.04, 0.04)'],
+            visualizations: ['PixelVisualization(index=5, alpha=20)'],
+            restrictions: [],
+          };
+          const jsonBlob = new Blob([JSON.stringify(info, null, 2)], {
+            type: 'application/json',
+          });
+          downloadFile(jsonBlob, `${fileName}.json`);
+          console.log(`... done: '${fileName}.png' + '${fileName}.json'`);
         }
         break;
       case 'c': // clear canvas, but keep nodes in current state
