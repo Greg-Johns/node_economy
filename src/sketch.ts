@@ -46,7 +46,7 @@ import { BoundingBoxRandomJumpRestriction } from './engine/customrestrictions/Bo
 const WIDTH = 640;
 const HEIGHT = 640;
 const MULTIFRAME_RENDER = false;
-const INITIAL_NODE_COUNT = 8; // must be even because of MagnetPairMotivation pairing
+const INITIAL_NODE_COUNT = 40; // must be even because of MagnetPairMotivation pairing
 
 const downloadFile = (blob: Blob, fileName: string): void => {
   const url = URL.createObjectURL(blob);
@@ -66,18 +66,27 @@ const sketch = (p: p5) => {
 
   p.setup = () => {
     p.createCanvas(WIDTH, HEIGHT);
-    p.background(248);
+    p.background(230, 230, 240);  // light blue
+    // p.background(244, 250, 232);  //light green
+    // p.background(40); // grey
 
     // --- set up the color pallet (background white index 0, foreground black index 1)
     const colorPallet = new ManualColorPallet();
+    // colorPallet.addColor(220, 220, 220);  // 0 off-white
+    // colorPallet.addColor(2, 2, 2);        // 1 black
     colorPallet.addColor(220, 220, 220);  // 0 off-white
-    colorPallet.addColor(2, 2, 2);        // 1 black
-    colorPallet.addColor(80, 80, 100);    // 2 grey
+    colorPallet.addColor(4, 182, 10);     // 4 green
+    colorPallet.addColor(8, 90, 18);        // 1 black
+    colorPallet.addColor(40, 40, 40);    // 8 red
+    colorPallet.addColor(100, 100, 100);     // 3 orange
+    colorPallet.addColor(160, 260, 160);     // 4 green
+    colorPallet.addColor(200, 200, 200);    // 5 blue
     colorPallet.addColor(200, 77, 6);     // 3 orange
-    colorPallet.addColor(4, 132, 10);     // 4 green
-    colorPallet.addColor(40, 50, 120);    // 5 blue
     colorPallet.addColor(96, 60, 190);    // 6 purple
     colorPallet.addColor(207, 166, 60);   // 7 mustard
+    colorPallet.addColor(227, 166, 60);   // 7 mustard
+    colorPallet.addColor(207, 116, 40);   // 7 mustard
+    colorPallet.addColor(107, 86, 220);   // 7 mustard
     colorPallet.addColor(190, 42, 42);    // 8 red
 
     // --- create the node group and economy
@@ -94,29 +103,29 @@ const sketch = (p: p5) => {
       // newNode.addMotivation(new MagnetMotivation(40, 70, .9, .9))
       // magnet: Node | null, scaleX, scaleY, dampeningX, dampeningY;
 
-      // newNode.addMotivation(new MagnetPairMotivation(40, 40, 0.08, 0.09));
+      // newNode.addMotivation(new MagnetPairMotivation(700, 700, 0.8, 0.9));
       // scaleX = 600, scaleY = 700, dampeningX = 0.964, dampeningY = 0.964
 
-      // newNode.addMotivation(new MagnetChainMotivation(10, 100, .04, .4));
+      // newNode.addMotivation(new MagnetChainMotivation(80, 10, .02, .4));
       // scaleX = 5, scaleY = 5, dampeningX = 0.964, dampeningY = 0.964
 
-      newNode.addMotivation(new MagnetRandomMotivation(80, 400, .01, .01));
+      newNode.addMotivation(new MagnetRandomMotivation(80, 400, .1, .09));
       // scaleX = 50, scaleY = 50, dampeningX = 0.964, dampeningY = 0.964
 
       // newNode.addMotivation(new SocialPersonalMotivation(1, .7));
-      newNode.addMotivation(new SocialVisibleMotivation(10, .2));
+      newNode.addMotivation(new SocialVisibleMotivation(800, .9));
       // personalRadius: number, strength: number
 
-      // newNode.addMotivation(new SineXMotivation(10, 100, .01))
-      // newNode.addMotivation(new SineYMotivation(10, 1, .7))
+      newNode.addMotivation(new SineXMotivation(2, 89, .1))
+      // newNode.addMotivation(new SineYMotivation(10, 10, .2))
       // amplitude, phase, dampening
 
-      newNode.addMotivation(new RandomXMotivation(6));
-      newNode.addMotivation(new RandomYMotivation(1));
+      // newNode.addMotivation(new RandomXMotivation(6));
+      // newNode.addMotivation(new RandomYMotivation(1));
       // amount
 
-      // newNode.addMotivation(new TowardsXMotivation(p.width / 2, .008));
-      newNode.addMotivation(new TowardsYMotivation(p.height, .000001));
+      newNode.addMotivation(new TowardsXMotivation(p.width / 2, .000001));
+      newNode.addMotivation(new TowardsYMotivation(p.height - 40, .00002));
       // targetX, strength
 
       // newNode.addMotivation(new FollowFarthestMotivation())
@@ -130,7 +139,7 @@ const sketch = (p: p5) => {
       // RESTRICTIONS ///////////////
       // nodeGroup.addNodeRestriction(new BoundingBoxRandomJumpRestriction(0, 0, p.width, p.height))
       // nodeGroup.addNodeRestriction(new BoundingBoxWrapRestriction(0, 0, p.width, p.height))
-      nodeGroup.addNodeRestriction(new BoundingBoxKillRestriction(0, p.height, p.width, 40))
+      nodeGroup.addNodeRestriction(new BoundingBoxKillRestriction(0, p.height - 20, p.width, 20))
       // nodeGroup.addNodeRestriction(new BoundingBoxKillRestriction(0, 0, p.width, p.height))
       // nodeGroup.addNodeRestriction(new MaxSpeedRestriction())
       // nodeGroup.addNodeRestriction(new MinSpeedRestriction())
@@ -139,28 +148,28 @@ const sketch = (p: p5) => {
       // newNode.addVisualization(new PixelVisualization(p, colorPallet, 5, 100));
       // ... index, alpha
 
-      newNode.addVisualization(new NeighborVisualization(p, colorPallet, 400, 40, false));
+      newNode.addVisualization(new NeighborVisualization(p, colorPallet, 180, 20, false));
       // neighborRadius, maxAlpha: number, toggleEnabled: boolean
 
       // newNode.addVisualization(new NodeMotivationVisualization(p, colorPallet, 2, 10, 3, 80, 7, 40));
       // ... bodyRadius, dirScale, bodyColorIndex, bodyColorAlpha,lineColorIndex, lineColorAlpha
 
-      newNode.addVisualization(
-        new SpeedCircleDrawVisualization(
-          p,
-          colorPallet,
-          4,  // scalingFactor
-          0,  // angle
-          1,
-          // (Math.pow(-1, Math.floor(p.random(0, 10))) / 1.2),
-          1,  // strokeColorIndex
-          1,  // strokeColorAlpha
-          1,  // strokeColorWidth
-          8,  // fillColorIndex
-          20, // fillColorAlpha
-          0   // fillColorWidth
-        )
-      );
+      // newNode.addVisualization(
+      //   new SpeedCircleDrawVisualization(
+      //     p,
+      //     colorPallet,
+      //     1,  // scalingFactor
+      //     0,  // angle
+      //     1,
+      //     // (Math.pow(-1, Math.floor(p.random(0, 10))) / 1.2),
+      //     1,  // strokeColorIndex
+      //     1,  // strokeColorAlpha
+      //     1,  // strokeColorWidth
+      //     8,  // fillColorIndex
+      //     20, // fillColorAlpha
+      //     0   // fillColorWidth
+      //   )
+      // );
 
       // newNode.addVisualization(new SpeedSquareVisualization(p, colorPallet, 9, 1, 90, 4, 80));
       // newNode.addVisualization(new SpeedCircleVisualization(p, colorPallet, 4, 1, 10, 4, 100));
