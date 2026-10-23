@@ -16,7 +16,6 @@ export class NeighborVisualization extends Visualization {
   public neighborRadius: number;
   public maxAlpha: number;
   public toggleEnabled: boolean;
-  private toggle = 1;
 
   public constructor(
     p: p5,
@@ -41,8 +40,7 @@ export class NeighborVisualization extends Visualization {
         const dist = n.getDistance(cn);
         const palletIndex = Math.floor(colorCount * dist / this.neighborRadius);
         const colorAlpha = this.maxAlpha - this.maxAlpha * dist / this.neighborRadius;
-        this.toggle = -this.toggle;
-        if (this.toggleEnabled && this.toggle === 1) {
+        if (this.toggleEnabled) {
           this.p.stroke(this.colorPallet.getColor(0, colorAlpha));
         } else {
           this.p.stroke(this.colorPallet.getColor(palletIndex, colorAlpha));

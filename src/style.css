@@ -19,9 +19,6 @@ main {
   background: #fff;
   position: sticky;
   top: 0;
-  margin: 20px 0;
-  padding: 0 50%;
-  border-bottom: 20px solid #fff;
 }
 
 canvas {
