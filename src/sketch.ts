@@ -120,7 +120,8 @@ const sketch = (p: p5) => {
   };
 
   p.setup = () => {
-    p.createCanvas(WIDTH, HEIGHT);
+    const canvas = p.createCanvas(WIDTH, HEIGHT);
+    canvas.parent('simulation-stage');
 
     activeConfig = sanitizeSimulationConfig(activeConfig);
     rebuildSimulation();

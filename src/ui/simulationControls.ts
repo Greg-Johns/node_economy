@@ -689,33 +689,69 @@ export const mountSimulationControlPanel = (
   initialConfig: SimulationConfig,
   callbacks: ControlPanelCallbacks
 ): { setConfig: (nextConfig: SimulationConfig) => void } => {
+  const panelWidth = 360;
+  const controlsOpenClassName = 'simulation-controls-open';
+
+  const toggleButton = document.createElement('button');
+  toggleButton.type = 'button';
+  toggleButton.textContent = 'Controls x';
+  toggleButton.setAttribute('aria-label', 'Toggle Simulation Controls');
+  toggleButton.style.position = 'fixed';
+  toggleButton.style.top = '12px';
+  toggleButton.style.right = `${panelWidth + 12}px`;
+  toggleButton.style.zIndex = '1001';
+  toggleButton.style.padding = '7px 10px';
+  toggleButton.style.border = '1px solid rgba(148, 163, 184, 0.7)';
+  toggleButton.style.borderRadius = '8px';
+  toggleButton.style.background = 'rgba(15, 23, 42, 0.9)';
+  toggleButton.style.color = '#e2e8f0';
+  toggleButton.style.fontSize = '12px';
+  toggleButton.style.fontWeight = '600';
+  toggleButton.style.cursor = 'pointer';
+
   const container = document.createElement('aside');
   container.setAttribute('aria-label', 'Simulation Controls');
   container.style.position = 'fixed';
-  container.style.top = '12px';
-  container.style.right = '12px';
-  container.style.width = '340px';
-  container.style.maxHeight = 'calc(100vh - 24px)';
+  container.style.top = '0';
+  container.style.right = '0';
+  container.style.width = `${panelWidth}px`;
+  container.style.height = '100vh';
+  container.style.maxHeight = '100vh';
+  container.style.boxSizing = 'border-box';
   container.style.overflowY = 'auto';
-  container.style.background = 'rgba(255,255,255,0.96)';
-  container.style.border = '1px solid #d1d5db';
-  container.style.borderRadius = '8px';
+  container.style.background = 'rgba(15, 23, 42, 0.96)';
+  container.style.color = '#e2e8f0';
+  container.style.borderLeft = '1px solid rgba(100, 116, 139, 0.5)';
   container.style.padding = '12px';
-  container.style.boxShadow = '0 8px 24px rgba(0,0,0,0.16)';
+  container.style.boxShadow = '0 16px 32px rgba(2, 6, 23, 0.5)';
   container.style.fontFamily = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
   container.style.fontSize = '12px';
   container.style.zIndex = '1000';
+
+  let panelVisible = true;
+  const syncPanelVisibility = (): void => {
+    container.style.display = panelVisible ? 'block' : 'none';
+    toggleButton.textContent = panelVisible ? 'Controls >' : '< Controls';
+    toggleButton.style.right = panelVisible ? `${panelWidth + 12}px` : '12px';
+    toggleButton.setAttribute('aria-expanded', String(panelVisible));
+    document.body.classList.toggle(controlsOpenClassName, panelVisible);
+  };
+  toggleButton.addEventListener('click', () => {
+    panelVisible = !panelVisible;
+    syncPanelVisibility();
+  });
 
   const title = document.createElement('h3');
   title.textContent = 'Simulation Controls';
   title.style.margin = '0 0 8px 0';
   title.style.fontSize = '14px';
+  title.style.color = '#f8fafc';
   container.appendChild(title);
 
   const intro = document.createElement('p');
   intro.textContent = 'Changing values restarts the simulation with the current settings.';
   intro.style.margin = '0 0 12px 0';
-  intro.style.color = '#4b5563';
+  intro.style.color = '#cbd5e1';
   container.appendChild(intro);
 
   let activeConfig = sanitizeSimulationConfig(initialConfig);
@@ -736,6 +772,7 @@ export const mountSimulationControlPanel = (
   const nodeCountLabel = document.createElement('label');
   nodeCountLabel.textContent = 'Node count (even)';
   nodeCountLabel.style.flex = '1';
+  nodeCountLabel.style.color = '#e2e8f0';
 
   const nodeCountInput = document.createElement('input');
   nodeCountInput.type = 'number';
@@ -744,6 +781,10 @@ export const mountSimulationControlPanel = (
   nodeCountInput.step = '2';
   nodeCountInput.style.width = '100px';
   nodeCountInput.style.padding = '4px';
+  nodeCountInput.style.background = '#0f172a';
+  nodeCountInput.style.color = '#f8fafc';
+  nodeCountInput.style.border = '1px solid #475569';
+  nodeCountInput.style.borderRadius = '6px';
   nodeCountInput.addEventListener('change', () => {
     const parsed = Number(nodeCountInput.value);
     updateConfig((config) => {
@@ -761,9 +802,10 @@ export const mountSimulationControlPanel = (
   restartButton.type = 'button';
   restartButton.style.marginBottom = '10px';
   restartButton.style.padding = '4px 8px';
-  restartButton.style.border = '1px solid #9ca3af';
+  restartButton.style.border = '1px solid #64748b';
   restartButton.style.borderRadius = '6px';
-  restartButton.style.background = '#f3f4f6';
+  restartButton.style.background = '#1e293b';
+  restartButton.style.color = '#f8fafc';
   restartButton.style.cursor = 'pointer';
   restartButton.addEventListener('click', () => callbacks.onRestart());
   container.appendChild(restartButton);
@@ -784,13 +826,15 @@ export const mountSimulationControlPanel = (
     summary.style.cursor = 'pointer';
     summary.style.fontWeight = '600';
     summary.style.marginBottom = '6px';
+    summary.style.color = '#e2e8f0';
     details.appendChild(summary);
 
     for (const definition of group.definitions) {
       const state = getFeatureState(activeConfig, group.section, definition.id);
 
       const card = document.createElement('div');
-      card.style.border = '1px solid #e5e7eb';
+      card.style.border = '1px solid rgba(100, 116, 139, 0.45)';
+      card.style.background = 'rgba(15, 23, 42, 0.7)';
       card.style.borderRadius = '6px';
       card.style.padding = '8px';
       card.style.marginTop = '6px';
@@ -800,6 +844,7 @@ export const mountSimulationControlPanel = (
       headerRow.style.alignItems = 'center';
       headerRow.style.gap = '6px';
       headerRow.style.fontWeight = '600';
+      headerRow.style.color = '#f1f5f9';
 
       const enabledInput = document.createElement('input');
       enabledInput.type = 'checkbox';
@@ -827,6 +872,7 @@ export const mountSimulationControlPanel = (
 
         const rowLabel = document.createElement('label');
         rowLabel.textContent = paramDefinition.label;
+        rowLabel.style.color = '#cbd5e1';
 
         if (paramDefinition.kind === 'number') {
           const input = document.createElement('input');
@@ -837,6 +883,10 @@ export const mountSimulationControlPanel = (
           input.step = String(paramDefinition.step);
           input.style.width = '100px';
           input.style.padding = '3px';
+          input.style.background = '#0f172a';
+          input.style.color = '#f8fafc';
+          input.style.border = '1px solid #475569';
+          input.style.borderRadius = '6px';
           input.addEventListener('change', () => {
             const parsed = Number(input.value);
             updateConfig((config) => {
@@ -872,6 +922,8 @@ export const mountSimulationControlPanel = (
   }
 
   document.body.appendChild(container);
+  document.body.appendChild(toggleButton);
+  syncPanelVisibility();
 
   return {
     setConfig: (nextConfig: SimulationConfig) => {
